@@ -1,0 +1,34 @@
+name: AITestApp
+options:
+  bundleIdPrefix: com.phucth13
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+targets:
+  AITestApp:
+    type: application
+    platform: iOS
+    sources:
+      - App
+      - DesignSystem
+      - Features
+      - Models
+      - Services
+      - Navigation
+      - path: Shared
+        optional: true
+      - path: Resources
+        optional: true
+        buildPhase: resources
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: "1.0"
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_NSCameraUsageDescription: "Cần camera để hiển thị xe trong không gian thật (AR)."
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SWIFT_VERSION: "5.0"
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: MPPZK7HR4Z
