@@ -13,7 +13,7 @@
 		1F4B8E5515D3DC4AE98C53BC /* AITestAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567BA1604865569ABA216EE6 /* AITestAppApp.swift */; };
 		256D32B247137008420B03CA /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B79867FFCF380853A7FF9508 /* ChatViewModel.swift */; };
 		3613F46D70CDAFFC6876380E /* CarShowroomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F426BE6734259B03A424E5B3 /* CarShowroomView.swift */; };
-		417469073554D48BDF8F0819 /* HandGestureController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7E69BAEA950159DAC75D640 /* HandGestureController.swift */; };
+		41FD53D127E831BC633C0119 /* CarModelLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10E87DA5A8282561F3EFD1C /* CarModelLoader.swift */; };
 		494E668B38AFE5415D57E48B /* car_model.usdz in Resources */ = {isa = PBXBuildFile; fileRef = B26DFA3BC98573AD958800DF /* car_model.usdz */; };
 		4DD2341341071343BFE4BA94 /* CarARShowroomView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 048307198E47DDE112DC37AD /* CarARShowroomView.swift */; };
 		5C1964C702715E7250E42002 /* PAICard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E6B4709AF86427FA5F99081 /* PAICard.swift */; };
@@ -56,7 +56,7 @@
 		B5C46ADD2FA123334E9C5198 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		B79867FFCF380853A7FF9508 /* ChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatViewModel.swift; sourceTree = "<group>"; };
 		BBBF2D8D2EDEA6D3EC18DAE8 /* PAIComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PAIComposer.swift; sourceTree = "<group>"; };
-		C7E69BAEA950159DAC75D640 /* HandGestureController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandGestureController.swift; sourceTree = "<group>"; };
+		C10E87DA5A8282561F3EFD1C /* CarModelLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarModelLoader.swift; sourceTree = "<group>"; };
 		CCCF5A144F78F7795A9B9A13 /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
 		DA4A99B897EDCCF6310A6E98 /* PAISpacing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PAISpacing.swift; sourceTree = "<group>"; };
 		E17E0B497E276DD024317B50 /* Secrets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Secrets.swift; sourceTree = "<group>"; };
@@ -192,9 +192,9 @@
 			isa = PBXGroup;
 			children = (
 				048307198E47DDE112DC37AD /* CarARShowroomView.swift */,
+				C10E87DA5A8282561F3EFD1C /* CarModelLoader.swift */,
 				F426BE6734259B03A424E5B3 /* CarShowroomView.swift */,
 				1F67AE107735F726D96699BF /* CarShowroomViewModel.swift */,
-				C7E69BAEA950159DAC75D640 /* HandGestureController.swift */,
 			);
 			path = CarShowroom;
 			sourceTree = "<group>";
@@ -301,13 +301,13 @@
 				1F4B8E5515D3DC4AE98C53BC /* AITestAppApp.swift in Sources */,
 				AFB03C8ACAF627B718A939EE /* AppRouter.swift in Sources */,
 				4DD2341341071343BFE4BA94 /* CarARShowroomView.swift in Sources */,
+				41FD53D127E831BC633C0119 /* CarModelLoader.swift in Sources */,
 				3613F46D70CDAFFC6876380E /* CarShowroomView.swift in Sources */,
 				E4D684342199383E8A8FC3BC /* CarShowroomViewModel.swift in Sources */,
 				A1C01FF858FA271B1AF66E2C /* ChatView.swift in Sources */,
 				256D32B247137008420B03CA /* ChatViewModel.swift in Sources */,
 				955F502D05B5B8023E093B64 /* Color+Hex.swift in Sources */,
 				BE06D87F843ED068448020B0 /* Conversation.swift in Sources */,
-				417469073554D48BDF8F0819 /* HandGestureController.swift in Sources */,
 				E94BD188E8257EFE1534A311 /* HomeView.swift in Sources */,
 				0EE4AEF532EF01DECD8312E7 /* HomeViewModel.swift in Sources */,
 				A68BD2ED5B598857F41B666C /* OpenAIService.swift in Sources */,

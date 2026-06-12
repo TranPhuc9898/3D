@@ -20,6 +20,8 @@ struct AITestAppApp: App {
                     }
             }
             .environment(router)
+            // Load ngầm model xe (~1-3s) ngay từ lúc mở app — vào showroom là xe hiện liền.
+            .task { CarModelLoader.preload() }
         }
     }
 }

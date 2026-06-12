@@ -13,12 +13,14 @@ struct CarARShowroomView: View {
     let onClose: () -> Void
 
     @State private var showDepositAlert = false
+    @State private var activeGesture: HandGesture?
 
     var body: some View {
         ZStack {
             ARCarContainer(
                 viewModel: viewModel,
-                selectedPaint: viewModel.selectedPaint
+                selectedPaint: viewModel.selectedPaint,
+                onHandGesture: { activeGesture = $0 }
             )
             .ignoresSafeArea()
             overlayControls
@@ -47,14 +49,22 @@ struct CarARShowroomView: View {
                 Spacer()
             }
             .padding(.horizontal, PAISpace.s5)
-            // Hạ nút X khỏi mép trên cho dễ với tới.
-            .padding(.top, 56)
+
+            if let activeGesture {
+                Label(activeGesture.hint, systemImage: activeGesture.icon)
+                    .font(PAIFont.xs)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, PAISpace.s4)
+                    .padding(.vertical, PAISpace.s2)
+                    .background(.black.opacity(0.4), in: Capsule())
+            }
 
             Spacer()
 
             bottomPanel
         }
         .padding(.vertical, PAISpace.s4)
+        .animation(.easeInOut(duration: 0.2), value: activeGesture)
     }
 
     private var bottomPanel: some View {
@@ -103,6 +113,26 @@ struct CarARShowroomView: View {
     }
 }
 
+// MARK: - Hint cử chỉ
+
+private extension HandGesture {
+    var hint: String {
+        switch self {
+        case .rotate: "Đang xoay — di tay ngang"
+        case .scale: "Banh tay phóng to, chụm lại thu nhỏ"
+        case .move: "Đang di chuyển — di tay tới chỗ muốn đặt xe"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .rotate: "arrow.triangle.2.circlepath"
+        case .scale: "plus.magnifyingglass"
+        case .move: "arrow.up.and.down.and.arrow.left.and.right"
+        }
+    }
+}
+
 // MARK: - ARView wrapper
 
 /// ARView chạy world tracking + plane detection: camera feed làm nền,
@@ -111,20 +141,13 @@ private struct ARCarContainer: UIViewRepresentable {
     let viewModel: CarShowroomViewModel
     /// Đọc trong body của view cha để SwiftUI gọi updateUIView khi đổi màu.
     let selectedPaint: CarPaint
+    /// Báo lên SwiftUI cử chỉ tay đang active (hiện indicator hướng dẫn).
+    let onHandGesture: (HandGesture?) -> Void
 
-    final class Coordinator: NSObject, ARCoachingOverlayViewDelegate {
+    final class Coordinator {
         var carEntity: Entity?
         var holderEntity: ModelEntity?
-        /// true khi overlay quét đã tắt (ARKit tìm thấy sàn).
-        var scanDone = false
-        /// Animation reveal chờ sẵn nếu xe load xong trước khi quét xong.
-        var pendingReveal: (() -> Void)?
-
-        func coachingOverlayViewDidDeactivate(_ coachingOverlayView: ARCoachingOverlayView) {
-            scanDone = true
-            pendingReveal?()
-            pendingReveal = nil
-        }
+        let handGesture = HandGestureController()
     }
 
     func makeCoordinator() -> Coordinator { Coordinator() }
@@ -143,18 +166,12 @@ private struct ARCarContainer: UIViewRepresentable {
         }
         arView.session.run(configuration)
 
-        let coordinator = context.coordinator
-
         let coachingOverlay = ARCoachingOverlayView()
         coachingOverlay.session = arView.session
         coachingOverlay.goal = .horizontalPlane
-        coachingOverlay.delegate = coordinator
         coachingOverlay.frame = arView.bounds
         coachingOverlay.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         arView.addSubview(coachingOverlay)
-        // Ép overlay hiện mỗi lần vào AR — mặc định ARKit có thể bỏ qua
-        // khi sàn detect quá nhanh, user không biết app đang quét.
-        coachingOverlay.setActive(true, animated: true)
 
         // .any + bounds nhỏ: sàn lẫn mặt bàn đều đặt được — classification
         // .floor ≥ 0.5m từng làm anchor không bao giờ kích hoạt ở phòng hẹp.
@@ -163,8 +180,43 @@ private struct ARCarContainer: UIViewRepresentable {
         )
         arView.scene.addAnchor(floorAnchor)
 
+        let coordinator = context.coordinator
+
+        // Tay trước camera: chụm cái+trỏ = xoay, banh/chụm cả tay = scale,
+        // nắm đấm + di = di chuyển xe trên sàn.
+        arView.session.delegate = coordinator.handGesture
+        coordinator.handGesture.onGestureChanged = onHandGesture
+        coordinator.handGesture.onRotate = { [weak coordinator] angle in
+            guard let holder = coordinator?.holderEntity else { return }
+            holder.transform.rotation =
+                simd_quatf(angle: angle, axis: [0, 1, 0]) * holder.transform.rotation
+        }
+        coordinator.handGesture.onScale = { [weak coordinator] ratio in
+            guard let holder = coordinator?.holderEntity else { return }
+            // Clamp 0.5×–2× để xe không thành đồ chơi hay quái vật.
+            let target = min(max(holder.scale.x * ratio, 0.5), 2.0)
+            holder.scale = SIMD3<Float>(repeating: target)
+        }
+        coordinator.handGesture.onMove = { [weak coordinator, weak arView] dx, dz in
+            guard let holder = coordinator?.holderEntity, let arView else { return }
+            // Trượt xe theo hướng nhìn: tay phải = xe sang phải theo góc
+            // nhìn, tay lên = xe ra xa. Chiếu vector camera lên mặt sàn.
+            let cam = arView.cameraTransform.matrix
+            var right = SIMD3<Float>(cam.columns.0.x, 0, cam.columns.0.z)
+            var forward = SIMD3<Float>(-cam.columns.2.x, 0, -cam.columns.2.z)
+            guard simd_length(right) > 0.001, simd_length(forward) > 0.001 else { return }
+            right = simd_normalize(right)
+            forward = simd_normalize(forward)
+            // Tay quét hết khung hình = xe dịch ~2m.
+            let worldDelta = right * (dx * 2.0) + forward * (dz * 2.0)
+            let localDelta = holder.parent.map {
+                $0.convert(direction: worldDelta, from: nil)
+            } ?? worldDelta
+            holder.position += localDelta
+        }
+
         Task { @MainActor in
-            guard let car = await CarModelLoader.loadCar() else { return }
+            guard let car = try? await Entity(named: "car_model") else { return }
             let prepared = viewModel.prepareForAR(car)
             applyGroundingShadow(to: prepared)
 
@@ -176,24 +228,15 @@ private struct ARCarContainer: UIViewRepresentable {
                 .generateBox(size: bounds.extents).offsetBy(translation: bounds.center)
             ])
 
+            // Animation phóng to chạy ngay không chờ event — nếu sàn chưa
+            // detect xong thì xe vẫn chắc chắn hiện full-size lúc anchor bám.
             let finalTransform = holder.transform
             holder.transform.scale = SIMD3<Float>(repeating: 0.001)
             floorAnchor.addChild(holder)
             arView.installGestures([.translation, .scale, .rotation], for: holder)
-
-            // Xe chỉ phóng to sau khi overlay quét tắt (tìm thấy sàn).
-            // Chờ overlay thay vì event của anchor: overlay là thứ user đang
-            // nhìn thấy, nó tắt thì reveal chắc chắn chạy — không kẹt vô hình.
-            let revealCar = {
-                holder.move(to: finalTransform, relativeTo: floorAnchor,
-                            duration: 0.6, timingFunction: .easeOut)
-                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-            }
-            if coordinator.scanDone {
-                revealCar()
-            } else {
-                coordinator.pendingReveal = revealCar
-            }
+            holder.move(to: finalTransform, relativeTo: floorAnchor,
+                        duration: 0.6, timingFunction: .easeOut)
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
 
             coordinator.carEntity = prepared
             coordinator.holderEntity = holder

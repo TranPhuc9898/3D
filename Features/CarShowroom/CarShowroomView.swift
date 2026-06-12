@@ -216,7 +216,7 @@ private struct CarViewerContainer: UIViewRepresentable {
         )
 
         Task { @MainActor in
-            guard let car = try? await Entity(named: "car_model") else { return }
+            guard let car = await CarModelLoader.loadCar() else { return }
             let prepared = viewModel.prepareForViewing(car)
             let carAnchor = AnchorEntity(world: .zero)
             carAnchor.addChild(prepared)
